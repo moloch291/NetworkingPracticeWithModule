@@ -31,7 +31,6 @@ resource "aws_subnet" "private_subnets" {
   vpc_id                  = aws_vpc.vpc.id
   availability_zone       = data.aws_availability_zones.names[count.index]
   cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
-  map_public_ip_on_launch = true
 
   tags = {
     Name        = "private-subnet-${count.index + 1}"
@@ -46,8 +45,8 @@ resource "aws_internet_gateway" "igw" {
     vpc_id     = "${aws_vpc.vpc.id}"
 
     tags = {
-        Name        = "igw"
-        Environment = "${var.env}"
+      Name        = "igw"
+      Environment = "${var.env}"
     }
 }
 
@@ -58,8 +57,8 @@ resource "aws_route_table" "public_subnet_rt" {
   tags       = {Name = "public_subnet_rt"}
 
   route {
-      cidr_block = "0.0.0.0/0"
-      gateway_id = aws_internet_gateway.igw.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
   }
 }
 
