@@ -26,11 +26,11 @@ resource "aws_subnet" "public_subnets" {
 
 # Private subnets:
 resource "aws_subnet" "private_subnets" {
-  count                   = var.private_subnet_count
-  depends_on              = [aws_vpc.vpc]
-  vpc_id                  = aws_vpc.vpc.id
-  availability_zone       = data.aws_availability_zones.names[count.index]
-  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
+  count             = var.private_subnet_count
+  depends_on        = [aws_vpc.vpc]
+  vpc_id            = aws_vpc.vpc.id
+  availability_zone = data.aws_availability_zones.names[count.index]
+  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
 
   tags = {
     Name        = "private-subnet-${count.index + 1}"
@@ -41,8 +41,13 @@ resource "aws_subnet" "private_subnets" {
 
 # Internet gateway:
 resource "aws_internet_gateway" "igw" {
-    depends_on = [aws_vpc.vpc, aws_subnet.subnets]
-    vpc_id     = "${aws_vpc.vpc.id}"
+    depends_on = [
+      aws_vpc.vpc,
+      aws_subnet.private_subnets,
+      aws_subnet.public_subnets
+    ]
+
+    vpc_id = "${aws_vpc.vpc.id}"
 
     tags = {
       Name        = "igw"
@@ -64,7 +69,13 @@ resource "aws_route_table" "public_subnet_rt" {
 
 # Route table association:
 resource "aws_route_table_association" "rt_igw_association" {
-  depends_on     = [aws_vpc.vpc, aws_subnet.subnets, aws_route_table.public_subnet_rt]
+  depends_on = [
+    aws_vpc.vpc,
+    aws_subnet.private_subnets,
+    aws_subnet.public_subnets
+    aws_route_table.public_subnet_rt
+  ]
+
   subnet_id      = aws_subnet.subnets[0].id
   route_table_id = aws_route_table.public_subnet_rt.id
 }
@@ -79,7 +90,7 @@ resource "aws_eip" "nat_gateway_eip" {
 resource "aws_nat_gateway" "NATgw" {
   depends_on    = [aws_internet_gateway.igw, aws_eip.nat_gateway_eip]
   allocation_id = aws_eip.nat_gateway_eip
-  subnet_id     = aws_subnet.subnets[0].id
+  subnet_id     = aws_subnet.public_subnets[0].id
   tags          = {Name = "NATgw"}
 }
 
@@ -100,6 +111,6 @@ resource "aws_route_table" "NATgw_rt" {
 # table with the Private Subnet!
 resource "aws_route_table_association" "Nat-Gateway-RT-Association" {
   depends_on     = [aws_route_table.NATgw_rt]
-  subnet_id      = aws_subnet.subnets[2].id
+  subnet_id      = aws_subnet.private_subnets.id
   route_table_id = aws_route_table.NATgw_rt.id
 }
