@@ -25,7 +25,7 @@ resource "aws_subnet" "public_subnets" {
 }
 
 # Private subnets:
-resource "aws_subnet" "public_subnets" {
+resource "aws_subnet" "private_subnets" {
   count                   = var.private_subnet_count
   depends_on              = [aws_vpc.vpc]
   vpc_id                  = aws_vpc.vpc.id
@@ -34,7 +34,7 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "public-subnet-${count.index + 1}"
+    Name        = "private-subnet-${count.index + 1}"
     Subnet      = "${data.aws_availability_zones.names[count.index]}-${count.index + 1}"
     Environment = "${var.env}"
   }
@@ -73,7 +73,7 @@ resource "aws_route_table_association" "rt_igw_association" {
 # NAT Elastic IP:
 resource "aws_eip" "nat_gateway_eip" {
   depends_on = [aws_route_table_association.rt_igw_association]
-  vpc = true
+  vpc        = true
 }
 
 # NAT gateway:
@@ -92,7 +92,7 @@ resource "aws_route_table" "NATgw_rt" {
   tags       = {Name = "Route Table for NAT Gateway"}
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.NATgw.id
   }
 }
