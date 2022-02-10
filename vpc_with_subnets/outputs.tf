@@ -9,6 +9,6 @@ output "vpc_cidr" {
 output "vpc_subnets" {
   value = {
     for subnet in aws_subnet.subnets :
-    subnet.id => subnet.cidr_block => subnet.tags.Subnet
+    subnet.id => subnet.tags.Subnet
   }
 }
