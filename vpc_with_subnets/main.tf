@@ -8,36 +8,34 @@ resource "aws_vpc" "vpc" {
   }
 }
 
-# Subnets:
-resource "aws_subnet" "subnets" {
-  for_each = data.aws_availability_zones.available.names
-
-  depends_on        = [aws_vpc.vpc]
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = each.key
-
-  cidr_block = cidrsubnet(
-    aws_vpc.vpc.cidr_block,
-    8,
-    index(
-      data.aws_availability_zones.available.names,
-      each.key
-    ) + 1
-  )
-
-  map_public_ip_on_launch = (
-    index(data.aws_availability_zones.available.names, each.key) == 2 ? false : true
-  )
+# Public subnets:
+resource "aws_subnet" "public_subnets" {
+  count                   = var.public_subnet_count
+  depends_on              = [aws_vpc.vpc]
+  vpc_id                  = aws_vpc.vpc.id
+  availability_zone       = data.aws_availability_zones.names[count.index]
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
+  map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${
-      index(data.aws_availability_zones.available.names, each.key) == 2 ? "private" : "public"
-    }-subnet-${index(data.aws_availability_zones.available.names, each.key) + 1}"
+    Name        = "public-subnet-${count.index + 1}"
+    Subnet      = "${data.aws_availability_zones.names[count.index]}-${count.index + 1}"
+    Environment = "${var.env}"
+  }
+}
 
-    Subnet      = "${each.key}-${
-      index(data.aws_availability_zones.available.names, each.key) + 1
-    }"
+# Private subnets:
+resource "aws_subnet" "public_subnets" {
+  count                   = var.private_subnet_count
+  depends_on              = [aws_vpc.vpc]
+  vpc_id                  = aws_vpc.vpc.id
+  availability_zone       = data.aws_availability_zones.names[count.index]
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
+  map_public_ip_on_launch = true
 
+  tags = {
+    Name        = "public-subnet-${count.index + 1}"
+    Subnet      = "${data.aws_availability_zones.names[count.index]}-${count.index + 1}"
     Environment = "${var.env}"
   }
 }

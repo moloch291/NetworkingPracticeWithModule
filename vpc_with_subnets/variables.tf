@@ -9,3 +9,13 @@ variable "vpc_cidr" {
   description = "IP range of the VPC"
   default     = "10.0.0.0/16"
 }
+
+variable "public_subnet_count" {
+  type    = number
+  default = 3 # Should be defined as 1, 2 or 3
+}
+
+variable "private_subnet_count" {
+  type    = number
+  default = 3 # Should be defined as 1, 2 or 3
+}
