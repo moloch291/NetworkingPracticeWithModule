@@ -32,9 +32,7 @@ resource "aws_subnet" "subnets" {
   tags = {
     Name        = "${
       index(data.aws_availability_zones.available.names, each.key) == 2 ? "private" : "public"
-    }-subnet-${
-      index(data.aws_availability_zones.available.names, each.key) + 1
-    }"
+    }-subnet-${index(data.aws_availability_zones.available.names, each.key) + 1}"
 
     Subnet      = "${each.key}-${
       index(data.aws_availability_zones.available.names, each.key) + 1
@@ -57,17 +55,13 @@ resource "aws_internet_gateway" "igw" {
 
 # Route table to public subnes:
 resource "aws_route_table" "public_subnet_rt" {
-  vpc_id = "${aws_vpc.vpc.id}"
-
+  vpc_id     = "${aws_vpc.vpc.id}"
   depends_on = [aws_vpc.vpc, aws_internet_gateway.igw]
+  tags       = {Name = "public_subnet_rt"}
 
   route {
       cidr_block = "0.0.0.0/0"
       gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = {
-    Name = "public_subnet_rt"
   }
 }
 
@@ -86,12 +80,29 @@ resource "aws_eip" "nat_gateway_eip" {
 
 # NAT gateway:
 resource "aws_nat_gateway" "NATgw" {
-  depends_on = [aws_internet_gateway.igw, aws_eip.nat_gateway_eip]
-
+  depends_on    = [aws_internet_gateway.igw, aws_eip.nat_gateway_eip]
   allocation_id = aws_eip.nat_gateway_eip
   subnet_id     = aws_subnet.subnets[0].id
+  tags          = {Name = "NATgw"}
+}
 
-  tags = {
-    Name = "NATgw"
+
+# NAT gateway route table:
+resource "aws_route_table" "NATgw_rt" {
+  depends_on = [aws_nat_gateway.NATgw]
+  vpc_id     = aws_vpc.main.id
+  tags       = {Name = "Route Table for NAT Gateway"}
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.NATgw.id
   }
+}
+
+# Creating an Route Table Association of the NAT Gateway route 
+# table with the Private Subnet!
+resource "aws_route_table_association" "Nat-Gateway-RT-Association" {
+  depends_on     = [aws_route_table.NATgw_rt]
+  subnet_id      = aws_subnet.subnets[2].id
+  route_table_id = aws_route_table.NATgw_rt.id
 }
