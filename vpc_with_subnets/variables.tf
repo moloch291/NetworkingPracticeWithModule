@@ -4,12 +4,6 @@ variable "env" {
     default     = "dev"
 }
 
-variable "region" {
-    type        = string
-    description = "Region for to VPC"
-    default     = "eu-central-1"
-}
-
 variable "vpc_cidr" {
     type        = string
     description = "IP range of the VPC"
@@ -18,11 +12,11 @@ variable "vpc_cidr" {
 
 variable "subnet_numbers" {
     type        = map(number)
-    description = "Map of AZ to a number that should be used for public subnets"
+    description = "Map of AZs to a number that should be used for public subnets"
 
     default = {
-        "eu-central-1a" = 1
-        "eu-central-1b" = 2
-        "eu-central-1c" = 3
+        "${var.region}a" = 1
+        "${var.region}b" = 2
+        "${var.region}c" = 3
     }
 }

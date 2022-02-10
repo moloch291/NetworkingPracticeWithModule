@@ -22,5 +22,5 @@ resource "aws_subnet" "subnets" {
         Name        = "${each.value == 3 ? "private" : "public"}-subnet-${each.value}"
         Subnet      = "${each.key}-${each.value}"
         Environment = "${var.env}"
-  }
+    }
 }
