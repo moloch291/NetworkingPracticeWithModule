@@ -15,13 +15,24 @@ resource "aws_subnet" "subnets" {
   availability_zone = each.key
 
   cidr_block = cidrsubnet(
-    aws_vpc.vpc.cidr_block, 8, index(data.aws_availability_zones.available.names, each.key) + 1
+    aws_vpc.vpc.cidr_block,
+    8,
+    index(
+      data.aws_availability_zones.available.names,
+      each.key
+    ) + 1
   )
 
-  map_public_ip_on_launch = (each.value == 3 ? false : true)
+  map_public_ip_on_launch = (
+    index(data.aws_availability_zones.available.names, each.key) == 2 ? false : true
+  )
 
   tags = {
-    Name        = "${each.value == 3 ? "private" : "public"}-subnet-${each.value}"
+    Name        = "${
+      index(data.aws_availability_zones.available.names, each.key) == 2 ? "private" : "public"
+    }-subnet-${
+      index(data.aws_availability_zones.available.names, each.key) + 1
+    }"
     Subnet      = "${each.key}-${each.value}"
     Environment = "${var.env}"
   }
