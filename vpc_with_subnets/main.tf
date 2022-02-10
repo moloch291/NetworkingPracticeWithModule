@@ -72,7 +72,7 @@ resource "aws_route_table_association" "rt_igw_association" {
   depends_on = [
     aws_vpc.vpc,
     aws_subnet.private_subnets,
-    aws_subnet.public_subnets
+    aws_subnet.public_subnets,
     aws_route_table.public_subnet_rt
   ]
 
@@ -98,8 +98,8 @@ resource "aws_nat_gateway" "NATgw" {
 # NAT gateway route table:
 resource "aws_route_table" "NATgw_rt" {
   depends_on = [aws_nat_gateway.NATgw]
-  vpc_id     = aws_vpc.main.id
-  tags       = {Name = "Route Table for NAT Gateway"}
+  vpc_id     = aws_vpc.vpc.id
+  tags       = {Name = "NATgw_rt"}
 
   route {
     cidr_block     = "0.0.0.0/0"
@@ -111,6 +111,6 @@ resource "aws_route_table" "NATgw_rt" {
 # table with the Private Subnet!
 resource "aws_route_table_association" "Nat-Gateway-RT-Association" {
   depends_on     = [aws_route_table.NATgw_rt]
-  subnet_id      = aws_subnet.private_subnets.id
+  subnet_id      = toset(aws_subnet.private_subnets.id) # ?
   route_table_id = aws_route_table.NATgw_rt.id
 }
