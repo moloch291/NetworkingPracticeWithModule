@@ -12,5 +12,6 @@ provider "aws" {
 }
 
 module "vpc" {
-  source  = "./vpc_with_subnets"
+  source     = "./vpc_with_subnets"
+  region = "${var.region}"
 }

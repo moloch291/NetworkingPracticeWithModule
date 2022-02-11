@@ -19,3 +19,5 @@ variable "private_subnet_count" {
   type    = number
   default = 3 # Should be defined as 1, 2 or 3
 }
+
+variable "region" {}

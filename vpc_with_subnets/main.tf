@@ -13,13 +13,13 @@ resource "aws_subnet" "public_subnets" {
   count                   = var.public_subnet_count
   depends_on              = [aws_vpc.vpc]
   vpc_id                  = aws_vpc.vpc.id
-  availability_zone       = data.aws_availability_zones.names[count.index]
+  availability_zone       = data.aws_availability_zones.available[count.index]
   cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
   map_public_ip_on_launch = true
 
   tags = {
     Name        = "public-subnet-${count.index + 1}"
-    Subnet      = "${data.aws_availability_zones.names[count.index]}-${count.index + 1}"
+    Subnet      = "${data.aws_availability_zones.available[count.index]}-${count.index + 1}"
     Environment = "${var.env}"
   }
 }
@@ -29,12 +29,12 @@ resource "aws_subnet" "private_subnets" {
   count             = var.private_subnet_count
   depends_on        = [aws_vpc.vpc]
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = data.aws_availability_zones.names[count.index]
+  availability_zone = data.aws_availability_zones.available[count.index]
   cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index + 1)
 
   tags = {
     Name        = "private-subnet-${count.index + 1}"
-    Subnet      = "${data.aws_availability_zones.names[count.index]}-${count.index + 1}"
+    Subnet      = "${data.aws_availability_zones.available[count.index]}-${count.index + 1}"
     Environment = "${var.env}"
   }
 }
@@ -76,7 +76,7 @@ resource "aws_route_table_association" "rt_igw_association" {
     aws_route_table.public_subnet_rt
   ]
 
-  subnet_id      = aws_subnet.subnets[0].id
+  subnet_id      = aws_subnet.public_subnets[0].id
   route_table_id = aws_route_table.public_subnet_rt.id
 }
 
@@ -109,8 +109,21 @@ resource "aws_route_table" "NATgw_rt" {
 
 # Creating an Route Table Association of the NAT Gateway route 
 # table with the Private Subnet!
-resource "aws_route_table_association" "Nat-Gateway-RT-Association" {
+resource "aws_route_table_association" "rt_NATgw_association" {
+  count          = var.private_subnet_count
   depends_on     = [aws_route_table.NATgw_rt]
-  subnet_id      = toset(aws_subnet.private_subnets.id) # ?
+  subnet_id      = aws_subnet.private_subnets[count.index].id # ?
   route_table_id = aws_route_table.NATgw_rt.id
+}
+
+# VPC Endpoint:
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id          = aws_vpc.vpc.id
+  service_name    = "com.amazonaws.${var.region}.s3"
+  route_table_ids = aws_route_table.NATgw_rt
+
+  tags = {
+    Name        = "s3-endpoint"
+    Environment = var.env
+  }
 }
