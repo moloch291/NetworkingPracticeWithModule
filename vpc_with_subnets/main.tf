@@ -123,7 +123,7 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids = aws_route_table.NATgw_rt
 
   tags = {
-    Name        = "s3-endpoint"
+    Name        = "${aws_vpc.vpc.tags.Name}s3-endpoint"
     Environment = var.env
   }
 }
